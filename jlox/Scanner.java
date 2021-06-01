@@ -42,7 +42,6 @@ public class Scanner {
 
     List<Token> scanTokens() {
         while (!isAtEnd()) {
-            // We are at the beginning of the next lexeme.
             start = current;
             scanToken();
         }
@@ -54,6 +53,7 @@ public class Scanner {
     private void scanToken() {
         char c = advance();
         switch (c) {
+            // Single/Double character symbols
             case '(': addToken(LEFT_PAREN); break;
             case ')': addToken(RIGHT_PAREN); break;
             case '{': addToken(LEFT_BRACE); break;
@@ -64,38 +64,45 @@ public class Scanner {
             case '+': addToken(PLUS); break;
             case ';': addToken(SEMICOLON); break;
             case '*': addToken(STAR); break;
-            case '!':
-                addToken(match('=') ? BANG_EQUAL : BANG);
-                break;
-            case '=':
-                addToken(match('=') ? EQUAL_EQUAL : EQUAL);
-                break;
-            case '<':
-                addToken(match('=') ? LESS_EQUAL : LESS);
-                break;
-            case '>':
-                addToken(match('=') ? GREATER_EQUAL : GREATER);
-                break;
+            case '!': addToken(match('=') ? BANG_EQUAL : BANG); break;
+            case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
+            case '<': addToken(match('=') ? LESS_EQUAL : LESS); break;
+            case '>': addToken(match('=') ? GREATER_EQUAL : GREATER); break;
+
+            // Comment or slash
             case '/':
                 if (match('/')) {
-                    // A comment goes until the end of the line.
+                    // Line comment
                     while (peek() != '\n' && !isAtEnd()) advance();
+                } else if (match('*')){
+                    // Block comment
+                    int nest = 1;
+                    while (nest > 0 && !isAtEnd()) {
+                        if (match('*')) {
+                            if(match('/')) nest--;
+                        } else if (match('/')) {
+                            if(match('*')) nest++;
+                        } else {
+                            advance();
+                        }
+                    }
                 } else {
                     addToken(SLASH);
                 }
                 break;
             
-            // Ignore whitespace.
+            // Whitespace
             case ' ':
             case '\r':
             case '\t':
                 break;
             
-            // New line
+            // Newline
             case '\n':
                 line++;
                 break;
             
+            // String Literal
             case '"': 
                 string(); 
                 break;
@@ -124,16 +131,12 @@ public class Scanner {
     private void number() {
         while (isDigit(peek())) advance();
     
-        // Look for a fractional part.
         if (peek() == '.' && isDigit(peekNext())) {
-            // Consume the "."
             advance();
-
             while (isDigit(peek())) advance();
         }
     
-        addToken(NUMBER,
-            Double.parseDouble(source.substring(start, current)));
+        addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
     private void string() {
@@ -155,24 +158,6 @@ public class Scanner {
         addToken(STRING, value);
     }
 
-    private boolean match(char expected) {
-        if (isAtEnd()) return false;
-        if (source.charAt(current) != expected) return false;
-    
-        current++;
-        return true;
-    }
-
-    private char peek() {
-        if (isAtEnd()) return '\0';
-        return source.charAt(current);
-    }
-
-    private char peekNext() {
-        if (current + 1 >= source.length()) return '\0';
-        return source.charAt(current + 1);
-    } 
-
     private boolean isAlpha(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
     }
@@ -192,6 +177,24 @@ public class Scanner {
     private char advance() {
         return source.charAt(current++);
     }
+
+    private boolean match(char expected) {
+        if (isAtEnd()) return false;
+        if (source.charAt(current) != expected) return false;
+    
+        current++;
+        return true;
+    }
+
+    private char peek() {
+        if (isAtEnd()) return '\0';
+        return source.charAt(current);
+    }
+
+    private char peekNext() {
+        if (current + 1 >= source.length()) return '\0';
+        return source.charAt(current + 1);
+    } 
     
     private void addToken(TokenType type) {
         addToken(type, null);
