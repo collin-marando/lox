@@ -86,6 +86,8 @@ public class Scanner {
                             advance();
                         }
                     }
+                    
+                    if (nest > 0) Lox.error(line, "Unterminated block comment."); 
                 } else {
                     addToken(SLASH);
                 }
