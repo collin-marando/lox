@@ -5,8 +5,8 @@ abstract class Expr {
 		R visit(Binary expr);
 		R visit(Grouping expr);
 		R visit(Literal expr);
-		R visit(Unary expr);
 		R visit(Ternary expr);
+		R visit(Unary expr);
 	}
 
 	static class Binary extends Expr {
@@ -52,21 +52,6 @@ abstract class Expr {
 		}
 	}
 
-	static class Unary extends Expr {
-		final Token operator;
-		final Expr right;
-
-		Unary(Token operator, Expr right) {
-			this.operator = operator;
-			this.right = right;
-		}
-
-		@Override
-		<R> R accept(Visitor<R> visitor) {
-			return visitor.visit(this);
-		}
-	}
-
 	static class Ternary extends Expr {
 		final Expr ifClause;
 		final Expr thenClause;
@@ -76,6 +61,21 @@ abstract class Expr {
 			this.ifClause = ifClause;
 			this.thenClause = thenClause;
 			this.elseClause = elseClause;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	static class Unary extends Expr {
+		final Token operator;
+		final Expr right;
+
+		Unary(Token operator, Expr right) {
+			this.operator = operator;
+			this.right = right;
 		}
 
 		@Override
