@@ -25,7 +25,7 @@ class Parser {
         return multi();
     }
 
-    // TODO When parsing function arguments goto equality instead of expression
+    // TODO When parsing function arguments goto ternary instead of expression, skipping multi
 
     private Expr multi() {
         Expr expr = ternary();
@@ -49,7 +49,6 @@ class Parser {
             Expr thenClause = expression();
             consume(COLON, "Expect ':' after then branch of ternary statement");
             Expr elseClause = ternary();
-            // TODO potentially swap this out for Stmt.If
             expr = new Expr.Ternary(expr, thenClause, elseClause);
         }
 
@@ -125,11 +124,58 @@ class Parser {
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "Expect ')' after expression.");
+            consume(RIGHT_PAREN, "Expect ')' after expression");
             return new Expr.Grouping(expr);
         }
 
-        throw error(peek(), "Expect expression.");
+
+        // ----- Error Productions -----
+        
+        // Multi
+        if (match(COMMA)) {
+            error(previous(), "Missing left-hand expression");
+            // NOTE: Instead of consuming the rest of the mutli, it may be better to let it
+            // get parsed, especially since the returned value is the rightmost expression
+            // We'll have to see how synchronize works.
+            multi(); 
+            return null;
+        }
+
+        // Ternary (QUESTION only, a leading COLON will get passed to default error)
+        if (match(QUESTION)) {
+            error(previous(), "Missing left-hand condition");
+            expression();
+            consume(COLON, "Expect ':' after then branch of ternary statement");
+            ternary();
+            return null;
+        }
+        
+        // Equality
+        if (match(BANG_EQUAL, EQUAL_EQUAL)) {
+            error(previous(), "Missing left-hand operand");
+            equality();
+            return null;
+        }
+
+        if (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+            error(previous(), "Missing left-hand operand");
+            comparison();
+            return null;
+        }
+
+        if (match(PLUS)) {
+            error(previous(), "Missing left-hand operand");
+            term();
+            return null;
+        }
+
+        if (match(SLASH, STAR)) {
+            error(previous(), "Missing left-hand operand");
+            factor();
+            return null;
+        }
+
+        throw error(peek(), "Expect expression");
     }
 
     private boolean match(TokenType... types) {
