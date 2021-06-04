@@ -22,7 +22,38 @@ class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return multi();
+    }
+
+    // TODO When parsing function arguments goto equality instead of expression
+
+    private Expr multi() {
+        Expr expr = ternary();
+
+        while(match(COMMA)) {
+            Token operator = previous();
+            Expr right = ternary();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr ternary() {
+        Expr expr = equality();
+
+        if(match(QUESTION)) {
+            // According to the C precendence table, the then clause takes precedence
+            // over the whole ternary, as if it were parenthesized. Therefore,
+            // this portion should be read as an expression, and not an equality
+            Expr thenClause = expression();
+            consume(COLON, "Expect ':' after then branch of ternary statement");
+            Expr elseClause = ternary();
+            // TODO potentially swap this out for Stmt.If
+            expr = new Expr.Ternary(expr, thenClause, elseClause);
+        }
+
+        return expr;
     }
 
     private Expr equality() {
