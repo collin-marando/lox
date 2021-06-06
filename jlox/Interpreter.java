@@ -1,13 +1,26 @@
 package jlox;
 
-public class Interpreter implements Expr.Visitor<Object> {    
-    void interpret(Expr expression) {
+import java.util.List;
+
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+
+    private Environment environment = new Environment();
+
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
+    }
+
+    @Override
+    public Object visit(Expr.Assign expr) {
+        Object value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
     }
 
     @Override
@@ -85,6 +98,35 @@ public class Interpreter implements Expr.Visitor<Object> {
         return null; // This should be unreachable
     }
 
+    @Override 
+    public Object visit(Expr.Var expr) {
+        return environment.get(expr.name);
+    }
+
+    @Override
+    public Void visit(Stmt.Print stmt) {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null) {
+            value = evaluate(stmt.initializer);
+        }
+
+        environment.define(stmt.name.lexeme, value);
+        return null;
+    }
+
     private void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) return;
         throw new RuntimeError(operator, "Operand must be a number");
@@ -124,5 +166,9 @@ public class Interpreter implements Expr.Visitor<Object> {
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    private Void execute(Stmt stmt) {
+        return stmt.accept(this);
     }
 }

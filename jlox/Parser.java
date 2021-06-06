@@ -1,5 +1,6 @@
 package jlox;
 
+import java.util.ArrayList;
 import java.util.List;
 import static jlox.TokenType.*;
 
@@ -13,12 +14,51 @@ class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        return statements;
+    }
+
+    private Stmt declaration() {
         try {
-            return expression();
+            return match(VAR) ? varDeclaration() : statement();
         } catch (ParseError error) {
+            synchronize();
             return null;
         }
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect variable name");
+
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration");
+        
+        return new Stmt.Var(name, initializer);
+    }
+
+    private Stmt statement() {
+        return match(PRINT) ? printStatement() : expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr expression = expression();
+        consume(SEMICOLON, "Expect ';' after value");
+        return new Stmt.Print(expression);
+    }
+
+    private Stmt expressionStatement () {
+        Expr expression = expression();
+        consume(SEMICOLON, "Expect ';' after value");
+        return new Stmt.Expression(expression);
     }
 
     private Expr expression() {
@@ -28,12 +68,30 @@ class Parser {
     // TODO When parsing function arguments goto ternary instead of expression, skipping multi
 
     private Expr multi() {
-        Expr expr = ternary();
+        Expr expr = assignment();
 
         while(match(COMMA)) {
             Token operator = previous();
-            Expr right = ternary();
+            Expr right = assignment();
             expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr assignment() {
+        Expr expr = ternary();
+        
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Var) {
+                Token name = ((Expr.Var)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target");
         }
 
         return expr;
@@ -128,6 +186,9 @@ class Parser {
             return new Expr.Grouping(expr);
         }
 
+        if (match(IDENTIFIER)) {
+            return new Expr.Var(previous());
+        }
 
         // ----- Error Productions -----
         

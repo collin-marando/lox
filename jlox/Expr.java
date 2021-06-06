@@ -2,11 +2,28 @@ package jlox;
 
 abstract class Expr {
 	interface Visitor<R> {
+		R visit(Assign expr);
 		R visit(Binary expr);
 		R visit(Grouping expr);
 		R visit(Literal expr);
 		R visit(Ternary expr);
 		R visit(Unary expr);
+		R visit(Var expr);
+	}
+
+	static class Assign extends Expr {
+		final Token name;
+		final Expr value;
+
+		Assign(Token name, Expr value) {
+			this.name = name;
+			this.value = value;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
 	}
 
 	static class Binary extends Expr {
@@ -76,6 +93,19 @@ abstract class Expr {
 		Unary(Token operator, Expr right) {
 			this.operator = operator;
 			this.right = right;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	static class Var extends Expr {
+		final Token name;
+
+		Var(Token name) {
+			this.name = name;
 		}
 
 		@Override
