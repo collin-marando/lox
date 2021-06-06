@@ -24,6 +24,7 @@ public class GenerateAst {
         ));
 
         defineAst(outputDir, "Stmt", Arrays.asList(
+            "Block      : List<Stmt> statements",
             "Expression : Expr expression",
             "Print      : Expr expression",
             "Var        : Token name, Expr initializer"
@@ -35,7 +36,7 @@ public class GenerateAst {
         PrintWriter writer = new PrintWriter(path, "UTF-8");
         
         writer.printf("package jlox;\n\n");
-        //writer.printf("import java.util.List;\n\n");
+        writer.printf("import java.util.List;\n\n");
         writer.printf("abstract class %s {\n", baseName);
         tabc++;
 

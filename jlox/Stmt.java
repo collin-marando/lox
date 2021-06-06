@@ -1,10 +1,26 @@
 package jlox;
 
+import java.util.List;
+
 abstract class Stmt {
 	interface Visitor<R> {
+		R visit(Block stmt);
 		R visit(Expression stmt);
 		R visit(Print stmt);
 		R visit(Var stmt);
+	}
+
+	static class Block extends Stmt {
+		final List<Stmt> statements;
+
+		Block(List<Stmt> statements) {
+			this.statements = statements;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
 	}
 
 	static class Expression extends Stmt {
