@@ -35,13 +35,14 @@ public class Interpreter implements Expr.Visitor<Object> {
                 checkNumberOperands(expr.operator, left, right);
                 return (double)left - (double)right;
             case PLUS:
+                if (left instanceof String || right instanceof String)
+                    return stringify(left) + stringify(right);
                 if (left instanceof Double && right instanceof Double)
                     return (double)left + (double)right;
-                if (left instanceof String && right instanceof String)
-                    return (String)left + (String)right;
-                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
+                throw new RuntimeError(expr.operator, "One of the operands must be a string, or both numbers");
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
+                if ((double)right == 0) throw new RuntimeError(expr.operator, "Operand must be a number");
                 return (double)left / (double)right;
             case STAR:
                 checkNumberOperands(expr.operator, left, right);
