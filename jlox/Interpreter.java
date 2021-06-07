@@ -55,7 +55,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 throw new RuntimeError(expr.operator, "One of the operands must be a string, or both numbers");
             case SLASH:
                 checkNumberOperands(expr.operator, left, right);
-                if ((double)right == 0) throw new RuntimeError(expr.operator, "Operand must be a number");
+                if ((double)right == 0) throw new RuntimeError(expr.operator, "Divide by zero");
                 return (double)left / (double)right;
             case STAR:
                 checkNumberOperands(expr.operator, left, right);
@@ -135,12 +135,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) return;
-        throw new RuntimeError(operator, "Operand must be a number");
+        throw new RuntimeError(operator, "Operand must be a number.");
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
         if (left instanceof Double && right instanceof Double) return;
-        throw new RuntimeError(operator, "Operands must be numbers");
+        throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
     private boolean isTruthy(Object object) {

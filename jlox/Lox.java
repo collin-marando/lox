@@ -72,7 +72,7 @@ public class Lox {
     }
 
     static void runtimeError(RuntimeError error) {
-        System.err.printf("Error: %s\n └> (line %s)\n", error.getMessage(), error.token.line);
+        System.err.printf("%s\n[line %s]\n", error.getMessage(), error.token.line);
         hadRuntimeError = true;
     }
 

@@ -33,14 +33,14 @@ class Parser {
     }
 
     private Stmt varDeclaration() {
-        Token name = consume(IDENTIFIER, "Expect variable name");
+        Token name = consume(IDENTIFIER, "Expect variable name.");
 
         Expr initializer = null;
         if (match(EQUAL)) {
             initializer = expression();
         }
 
-        consume(SEMICOLON, "Expect ';' after variable declaration");
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
         
         return new Stmt.Var(name, initializer);
     }
@@ -53,13 +53,13 @@ class Parser {
 
     private Stmt printStatement() {
         Expr expression = expression();
-        consume(SEMICOLON, "Expect ';' after value");
+        consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(expression);
     }
 
     private Stmt expressionStatement () {
         Expr expression = expression();
-        consume(SEMICOLON, "Expect ';' after value");
+        consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Expression(expression);
     }
 
@@ -70,7 +70,7 @@ class Parser {
             statements.add(declaration());
         }
 
-        consume(RIGHT_BRACE, "Expect '}' after block");
+        consume(RIGHT_BRACE, "Expect '}' after block.");
 
         return statements;
     }
@@ -105,7 +105,7 @@ class Parser {
                 return new Expr.Assign(name, value);
             }
 
-            error(equals, "Invalid assignment target");
+            error(equals, "Invalid assignment target.");
         }
 
         return expr;
@@ -119,7 +119,7 @@ class Parser {
             // over the whole ternary, as if it were parenthesized. Therefore,
             // this portion should be read as an expression, and not an equality
             Expr thenClause = expression();
-            consume(COLON, "Expect ':' after then branch of ternary statement");
+            consume(COLON, "Expect ':' after then branch of ternary statement.");
             Expr elseClause = ternary();
             expr = new Expr.Ternary(expr, thenClause, elseClause);
         }
@@ -196,7 +196,7 @@ class Parser {
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "Expect ')' after expression");
+            consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
 
@@ -220,7 +220,7 @@ class Parser {
         if (match(QUESTION)) {
             error(previous(), "Missing left-hand condition");
             expression();
-            consume(COLON, "Expect ':' after then branch of ternary statement");
+            consume(COLON, "Expect ':' after then branch of ternary statement.");
             ternary();
             return null;
         }
@@ -250,7 +250,7 @@ class Parser {
             return null;
         }
 
-        throw error(peek(), "Expect expression");
+        throw error(peek(), "Expect expression.");
     }
 
     private boolean match(TokenType... types) {
