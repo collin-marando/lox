@@ -8,6 +8,7 @@ abstract class Expr {
 		R visit(Binary expr);
 		R visit(Grouping expr);
 		R visit(Literal expr);
+		R visit(Logical expr);
 		R visit(Ternary expr);
 		R visit(Unary expr);
 		R visit(Var expr);
@@ -71,14 +72,31 @@ abstract class Expr {
 		}
 	}
 
+	static class Logical extends Expr {
+		final Expr left;
+		final Token operator;
+		final Expr right;
+
+		Logical(Expr left, Token operator, Expr right) {
+			this.left = left;
+			this.operator = operator;
+			this.right = right;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
 	static class Ternary extends Expr {
-		final Expr ifClause;
-		final Expr thenClause;
+		final Expr condition;
+		final Expr thenBranch;
 		final Expr elseClause;
 
-		Ternary(Expr ifClause, Expr thenClause, Expr elseClause) {
-			this.ifClause = ifClause;
-			this.thenClause = thenClause;
+		Ternary(Expr condition, Expr thenBranch, Expr elseClause) {
+			this.condition = condition;
+			this.thenBranch = thenBranch;
 			this.elseClause = elseClause;
 		}
 
