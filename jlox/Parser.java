@@ -184,8 +184,6 @@ class Parser {
         return multi();
     }
 
-    // TODO When parsing function arguments goto ternary instead of expression, skipping multi
-
     private Expr multi() {
         Expr expr = assignment();
 
@@ -333,7 +331,7 @@ class Parser {
             do {
                 if (arguments.size() >= 255)
                     error(peek(), "Can't have more than 255 arguments.");
-                arguments.add(expression());
+                arguments.add(assignment());
             } while (match(COMMA));
         }
         
