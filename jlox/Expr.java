@@ -6,6 +6,7 @@ abstract class Expr {
 	interface Visitor<R> {
 		R visit(Assign expr);
 		R visit(Binary expr);
+		R visit(Call expr);
 		R visit(Grouping expr);
 		R visit(Literal expr);
 		R visit(Logical expr);
@@ -38,6 +39,23 @@ abstract class Expr {
 			this.left = left;
 			this.operator = operator;
 			this.right = right;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	static class Call extends Expr {
+		final Expr callee;
+		final Token paren;
+		final List<Expr> arguments;
+
+		Call(Expr callee, Token paren, List<Expr> arguments) {
+			this.callee = callee;
+			this.paren = paren;
+			this.arguments = arguments;
 		}
 
 		@Override
