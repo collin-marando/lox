@@ -212,16 +212,16 @@ class Parser {
     private Expr assignment() {
         Expr expr = ternary();
         
-        if (match(EQUAL)) {
-            Token equals = previous();
+        if (match(EQUAL, PLUS_EQUAL, MINUS_EQUAL)) {
+            Token operator = previous();
             Expr value = assignment();
 
             if (expr instanceof Expr.Var) {
                 Token name = ((Expr.Var)expr).name;
-                return new Expr.Assign(name, value);
+                return new Expr.Assign(name, operator, value);
             }
 
-            error(equals, "Invalid assignment target.");
+            error(operator, "Invalid assignment target.");
         }
 
         return expr;
@@ -316,26 +316,62 @@ class Parser {
     }
 
     private Expr unary() {
-        if (match(BANG, MINUS)) {
+        if (match(BANG, MINUS, MINUS_MINUS, PLUS_PLUS)) {
             Token operator = previous();
             Expr right = unary();
-            return new Expr.Unary(operator, right);
+            switch (operator.type) {
+                case BANG:
+                case MINUS:
+                    return new Expr.Unary(operator, right);
+                case MINUS_MINUS:
+                case PLUS_PLUS:
+                    // NOTE: This causes failure on double negation; maybe make test patch later
+                    // Temp fix is return right expr here instead
+                    return buildIncDec(operator, right);
+                default:
+            }
         }
-
-        return call();
+        
+        return post();    
     }
 
-    private Expr call(){
+    private Expr post(){
         Expr expr = primary();
-        while (true) {
+        if (match(MINUS_MINUS)) {
+            Token operator = previous();
+            return new Expr.Binary(
+                new Expr.Grouping(buildIncDec(operator, expr)), 
+                new Token(PLUS, "+", null, operator.line), 
+                new Expr.Literal(1.0));
+        } else if (match(PLUS_PLUS)) {
+            Token operator = previous();
+            // (x += 1) - 1
+            return new Expr.Binary(
+                new Expr.Grouping(buildIncDec(operator, expr)), 
+                new Token(MINUS, "-", null, operator.line), 
+                new Expr.Literal(1.0));
+        } else while (true) {
             if(match(LEFT_PAREN)){
                 expr = finishCall(expr);
             } else {
+                // TODO: Catch error here?
                 break;
             }
         }
 
         return expr;
+    }
+
+    private Expr buildIncDec(Token operator, Expr expr) {
+        if (expr instanceof Expr.Var) {
+            Token name = ((Expr.Var)expr).name;
+            Token op = operator.type == MINUS_MINUS ? 
+                new Token(MINUS_EQUAL, "-=", null, operator.line):
+                new Token(PLUS_EQUAL, "+=", null, operator.line);
+            return new Expr.Assign(name, op, new Expr.Literal(1.0));
+        }
+        error(operator, "Invalid assignment target.");
+        return null;
     }
 
     private Expr finishCall(Expr callee) {
@@ -437,9 +473,13 @@ class Parser {
         throw error(peek(), message);
     }
 
-    private boolean check(TokenType type) {
+    private boolean check(TokenType... types) {
         if (isAtEnd()) return false;
-        return peek().type == type;
+        for (TokenType type : types) {
+            if (peek().type == type)
+                return true;
+        }
+        return false;
     }
 
     private Token advance() {

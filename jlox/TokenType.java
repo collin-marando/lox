@@ -3,10 +3,11 @@ package jlox;
 enum TokenType {
     // Single-character tokens.
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, 
-    QUESTION, COLON,
+    COMMA, DOT, SEMICOLON, SLASH, STAR, QUESTION, COLON,
   
     // One or two character tokens.
+    MINUS, MINUS_MINUS, MINUS_EQUAL,
+    PLUS, PLUS_PLUS, PLUS_EQUAL,
     BANG, BANG_EQUAL,
     EQUAL, EQUAL_EQUAL,
     GREATER, GREATER_EQUAL,

@@ -41,6 +41,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visit(Expr.Assign expr) {
         Object value = evaluate(expr.value);
+
+        Object targetVal = environment.get(expr.name);
+        switch (expr.operator.type) {
+            case PLUS_EQUAL:
+                checkNumberOperands(expr.operator, environment.get(expr.name), value);
+                value = (double)targetVal + (double)value;
+                break;
+            case MINUS_EQUAL:
+                checkNumberOperands(expr.operator, environment.get(expr.name), value);
+                value = (double)targetVal - (double)value;
+                break;
+            default:
+        }
+        
         environment.assign(expr.name, value);
         return value;
     }
