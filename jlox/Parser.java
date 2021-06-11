@@ -3,6 +3,7 @@ package jlox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import static jlox.TokenType.*;
 
 class Parser {
@@ -10,6 +11,7 @@ class Parser {
 
     private final List<Token> tokens;
     private int current = 0;
+    private int loopDepth = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -74,6 +76,7 @@ class Parser {
         if (match(WHILE)) return whileStatement();
         if (match(FOR)) return forStatement();
         if (match(PRINT)) return printStatement();
+        if (match(BREAK)) return breakStatement();
         if (match(RETURN)) return returnStatement();
         if (match(LEFT_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
@@ -96,9 +99,14 @@ class Parser {
         consume(LEFT_PAREN, "Expect '(' after 'while'.");
         Expr condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after while condition.");
-        Stmt body = statement();
 
-        return new Stmt.While(condition, body);
+        try {
+            loopDepth++;
+            Stmt body = statement();
+            return new Stmt.While(condition, body);
+        } finally {
+            loopDepth--;
+        }
     }
 
     private Stmt forStatement() {
@@ -123,34 +131,39 @@ class Parser {
             increment = expression();
         consume(RIGHT_PAREN, "Expect ')' after for clauses.");
 
-        Stmt body = statement();
+        try {
+            loopDepth++;
 
-        if (increment != null) {
-            body = new Stmt.Block(Arrays.asList(
-                body,
-                new Stmt.Expression(increment)
-            ));
+            Stmt body = statement();
+    
+            if (increment != null)
+                body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
+    
+            if (condition == null)
+                condition = new Expr.Literal(true);
+    
+            body = new Stmt.While(condition, body);
+    
+            if (initializer != null)
+                body = new Stmt.Block(Arrays.asList(initializer, body));
+    
+            return body;
+        } finally {
+            loopDepth--;
         }
-
-        if (condition == null)
-            condition = new Expr.Literal(true);
-
-        body = new Stmt.While(condition, body);
-
-        if (initializer != null) {
-            body = new Stmt.Block(Arrays.asList(
-                initializer,
-                body
-            ));
-        }
-
-        return body;
     }
 
     private Stmt printStatement() {
         Expr expression = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(expression);
+    }
+
+    private Stmt breakStatement() {
+        if (loopDepth == 0)
+            error(previous(), "Must be inside a loop to use 'break'.");
+        consume(SEMICOLON, "Expect ';' after break statement.");
+        return new Stmt.Break();
     }
 
     private Stmt returnStatement() {

@@ -3,10 +3,12 @@ package jlox;
 import java.util.ArrayList;
 import java.util.List;
 
+final class BreakException extends RuntimeException {}
+
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // This flag is used to appease the testing suite
-    final boolean test = true; 
+    final boolean test = false; 
 
     final Environment globals = new Environment();
     private Environment environment = globals;
@@ -171,6 +173,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visit(Stmt.Break stmt) {
+        throw new BreakException();
+    }
+
+    @Override
     public Void visit(Stmt.Expression stmt) {
         evaluate(stmt.expression);
         return null;
@@ -221,8 +228,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     
     @Override
     public Void visit(Stmt.While stmt) {
-        while (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body);
+        try {
+            while (isTruthy(evaluate(stmt.condition))) {
+                execute(stmt.body);
+            }
+        } catch (BreakException e) {
+            // Loop exited
         }
         return null;
     }

@@ -5,6 +5,7 @@ import java.util.List;
 abstract class Stmt {
 	interface Visitor<R> {
 		R visit(Block stmt);
+		R visit(Break stmt);
 		R visit(Expression stmt);
 		R visit(Function stmt);
 		R visit(If stmt);
@@ -19,6 +20,17 @@ abstract class Stmt {
 
 		Block(List<Stmt> statements) {
 			this.statements = statements;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visit(this);
+		}
+	}
+
+	static class Break extends Stmt {
+
+		Break() {
 		}
 
 		@Override

@@ -27,6 +27,7 @@ public class GenerateAst {
 
         defineAst(outputDir, "Stmt", Arrays.asList(
             "Block      : List<Stmt> statements",
+            "Break      : ",
             "Expression : Expr expression",
             "Function   : Token name, List<Token> params, List<Stmt> body",
             "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
@@ -78,7 +79,7 @@ public class GenerateAst {
         writer.printf("%sstatic class %s extends %s {\n", tabs(),  className, baseName);
         tabc++;
         
-        String[] fields = fieldList.split(", ");
+        String[] fields = fieldList.length() == 0 ? new String[0] : fieldList.split(", ");
         for (String field : fields) {
             writer.printf("%sfinal %s;\n", tabs(), field);
         }
