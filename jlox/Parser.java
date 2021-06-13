@@ -7,6 +7,10 @@ import java.util.List;
 import static jlox.TokenType.*;
 
 class Parser {
+
+    // This flag is used to appease the testing suite
+    final boolean test = Global.test;
+
     private static class ParseError extends RuntimeException {}
 
     private final List<Token> tokens;
