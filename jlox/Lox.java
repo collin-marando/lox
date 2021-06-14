@@ -76,6 +76,10 @@ public class Lox {
         }
     }
 
+    static void warning(Token token, String message) {
+        System.err.printf("[line %s] Warning at '%s': %s\n", token.line, token.lexeme, message);
+    }
+
     static void runtimeError(RuntimeError error) {
         System.err.printf("%s\n[line %s]\n", error.getMessage(), error.token.line);
         hadRuntimeError = true;
