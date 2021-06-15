@@ -417,10 +417,14 @@ class Parser {
         // Multi
         if (match(COMMA)) {
             error(previous(), "Missing left-hand expression");
-            // NOTE: Instead of consuming the rest of the mutli, it may be better to let it
-            // get parsed, especially since the returned value is the rightmost expression
-            // We'll have to see how synchronize works.
-            multi(); 
+            multi();
+            return null;
+        }
+
+        // Assignment
+        if (match(EQUAL, MINUS_EQUAL, PLUS_EQUAL)) {
+            error(previous(), "Missing left-hand assignment target");
+            assignment();
             return null;
         }
 
@@ -432,6 +436,20 @@ class Parser {
             ternary();
             return null;
         }
+
+        // Or
+        if (match(OR)) {
+            error(previous(), "Missing left-hand operand");
+            or();
+            return null;
+        }
+
+        // And
+        if (match(AND)) {
+            error(previous(), "Missing left-hand operand");
+            and();
+            return null;
+        }
         
         // Equality
         if (match(BANG_EQUAL, EQUAL_EQUAL)) {
@@ -440,18 +458,21 @@ class Parser {
             return null;
         }
 
+        // Comparison
         if (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             error(previous(), "Missing left-hand operand");
-            comparison();
+            term();
             return null;
         }
 
+        // Term
         if (match(PLUS)) {
             error(previous(), "Missing left-hand operand");
             term();
             return null;
         }
 
+        // Factor
         if (match(SLASH, STAR)) {
             error(previous(), "Missing left-hand operand");
             factor();
