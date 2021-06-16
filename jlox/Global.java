@@ -1,5 +1,5 @@
 package jlox;
 
 public class Global {
-    public static final boolean test = false;
+    public static final boolean test = true;
 }

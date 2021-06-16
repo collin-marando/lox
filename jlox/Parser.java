@@ -32,6 +32,7 @@ class Parser {
 
     private Stmt declaration() {
         try {
+            if (match(CLASS)) return classDeclaration();
             if (match(VAR)) return varDeclaration();
             if (match(FUN)) return funcDeclaration("function");
             return statement();
@@ -39,6 +40,20 @@ class Parser {
             synchronize();
             return null;
         }
+    }
+
+    private Stmt classDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect class name.");
+        consume(LEFT_BRACE, "Expect '{' before class body.");
+
+        List<Stmt.Function> methods = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(funcDeclaration("method"));
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after class body.");
+
+        return new Stmt.Class(name, methods);
     }
 
     private Stmt varDeclaration() {
@@ -54,7 +69,7 @@ class Parser {
         return new Stmt.Var(name, initializer);
     }
 
-    private Stmt funcDeclaration(String kind) {
+    private Stmt.Function funcDeclaration(String kind) {
         Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
         
         consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
@@ -223,6 +238,9 @@ class Parser {
             if (expr instanceof Expr.Var) {
                 Token name = ((Expr.Var)expr).name;
                 return new Expr.Assign(name, operator, value);
+            } else if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get)expr;
+                return new Expr.Set(get.object, get.name, value);
             }
 
             error(operator, "Invalid assignment target.");
@@ -357,6 +375,9 @@ class Parser {
         } else while (true) {
             if(match(LEFT_PAREN)){
                 expr = finishCall(expr);
+            } else if (match(DOT)) {
+                Token name = consume(IDENTIFIER, "Expect property name after '.'.");
+                expr = new Expr.Get(expr, name);
             } else {
                 // TODO: Catch error here?
                 break;
@@ -398,8 +419,12 @@ class Parser {
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
 
-        if(match(NUMBER, STRING)) {
+        if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
+        }
+
+        if (match(THIS)) {
+            return new Expr.This(previous());
         }
 
         if (match(LEFT_PAREN)) {

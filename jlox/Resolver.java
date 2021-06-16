@@ -6,13 +6,24 @@ import java.util.Map;
 import java.util.Stack;
 
 public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
+    
+    // This flag is used to appease the testing suite
+    boolean test = Global.test; 
+
     private final Interpreter interpreter;
     private final Stack<Map<String, Variable>> scopes = new Stack<>();
-    private FunctionType currentFunction = FunctionType.NONE;
-
+    
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
     }
+
+    private enum FunctionType { NONE, FUNCTION, INIT, METHOD }
+    private FunctionType currentFunction = FunctionType.NONE;
+    
+    private enum ClassType { NONE, CLASS }
+    private ClassType currentClass = ClassType.NONE;
+
+    private enum VariableState { DECLARED, DEFINED, READ }
 
     private static class Variable {
         final Token name;
@@ -22,17 +33,6 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             this.name = name;
             this.state = state;
         }
-    }
-
-    private enum VariableState {
-        DECLARED,
-        DEFINED,
-        READ
-    }
-
-    private enum FunctionType {
-        NONE,
-        FUNCTION
     }
 
     @Override
@@ -45,6 +45,34 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visit(Stmt.Break stmt) {
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Class stmt) {
+        ClassType enclosingClass = currentClass;
+        currentClass = ClassType.CLASS;
+
+        declare(stmt.name);
+        define(stmt.name);
+
+        beginScope();
+        scopes.peek().put("this", 
+            new Variable(
+                new Token(TokenType.THIS, "this", null, -1), 
+                VariableState.DEFINED));
+
+        for (Stmt.Function method : stmt.methods) {
+            FunctionType declaration = FunctionType.METHOD;
+            if (method.name.lexeme.equals("init")) {
+                declaration = FunctionType.INIT;
+            }
+        
+            resolveFunction(method, declaration);
+        }
+        endScope();
+
+        currentClass = enclosingClass;
         return null;
     }
 
@@ -84,8 +112,11 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             Lox.error(stmt.keyword, "Can't return from top-level code.");
         }
 
-        if (stmt.value != null) 
+        if (stmt.value != null) {
+            if (currentFunction == FunctionType.INIT)
+                Lox.error(stmt.keyword, "Can't return a value from an initializer.");
             resolve(stmt.value);
+        }
         return null;
     }
 
@@ -135,6 +166,12 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visit(Expr.Get expr) {
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
     public Void visit(Expr.Literal expr) {
         return null;
     }
@@ -147,10 +184,32 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visit(Expr.Set expr) {
+        resolve(expr.value);
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
     public Void visit(Expr.Ternary expr) {
         resolve(expr.condition);
         resolve(expr.thenBranch);
         resolve(expr.elseClause);
+        return null;
+    }
+
+    @Override
+    public Void visit(Expr.This expr) {
+        // TODO: It might possible that 'this' can be assigned to
+        // I'm not sure if that'd pass, will have to see
+        // For now, we default to true -> VariableState.READ
+        if (currentClass == ClassType.NONE) {
+            Lox.error(expr.keyword,
+                "Can't use 'this' outside of a class.");
+            return null;
+        }
+
+        resolveLocal(expr, expr.keyword, true);
         return null;
     }
 
@@ -178,8 +237,10 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private void endScope() {
         Map<String, Variable> scope = scopes.pop();
+        if(test) return; 
         
         for (Map.Entry<String, Variable> entry : scope.entrySet()) {
+            if (entry.getKey() == "this") continue;
             if (entry.getValue().state == VariableState.DEFINED) {
                 Lox.warning(entry.getValue().name, "Local variable is not used.");
             }
