@@ -164,6 +164,7 @@ public class Scanner {
     
         // Trim the surrounding quotes.
         String value = source.substring(start + 1, current - 1);
+        value = value.replaceAll("\\\\n", "\n").replaceAll("\\\\t", "\t");
         addToken(STRING, value);
     }
 
