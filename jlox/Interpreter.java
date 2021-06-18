@@ -29,6 +29,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public String toString() { return "<native fn>"; }
         });
+        globals.define("getClass", new LoxCallable(){
+            @Override
+            public int arity() { return 1; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                Object arg = arguments.get(0);
+                if (arg instanceof LoxInstance && ! (arg instanceof LoxClass))
+                    return ((LoxInstance)arg).getLoxClass();
+
+                // TODO: Figure out how to throw a built-in error here, instead of returning null
+                // System.out.println("getLoxClass: argument must be an instance");
+                return null;
+            }
+            
+            @Override
+            public String toString() { return "<nativ fn>"; }
+        });
     }
 
     void interpret(List<Stmt> statements) {
