@@ -252,7 +252,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         Map<String, LoxFunction> staticMethods = new HashMap<>();
         for (Stmt.Function method : stmt.staticMethods) {
-            LoxFunction function = new LoxFunction(method, environment, false);
+            LoxFunction function = new LoxFunction(method, environment, method.name.lexeme.equals("init"));
             staticMethods.put(method.name.lexeme, function);
         }
         LoxClass metaclass = new LoxClass(null, stmt.name.lexeme + " metaclass", staticMethods);
@@ -264,6 +264,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             methods.put(method.name.lexeme, function);
         }
         LoxClass loxClass = new LoxClass(metaclass, stmt.name.lexeme, methods);
+
+        // Call static class initializer, if available
+        LoxFunction initializer = metaclass.findMethod("init");
+        if (initializer != null) {
+            initializer.bind(loxClass).call(this, null);
+        }
 
         environment.assign(stmt.name, loxClass);
         return null;
