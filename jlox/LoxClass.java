@@ -5,10 +5,12 @@ import java.util.Map;
 
 public class LoxClass extends LoxInstance implements LoxCallable {
     final String name;
+    final LoxClass superclass;
     private final Map<String, LoxFunction> methods;
 
-    LoxClass(LoxClass metaClass, String name, Map<String, LoxFunction> methods) {
+    LoxClass(LoxClass metaClass, LoxClass superclass, String name, Map<String, LoxFunction> methods) {
         super(metaClass);
+        this.superclass = superclass;
         this.name = name;
         this.methods = methods;
     }
@@ -16,6 +18,11 @@ public class LoxClass extends LoxInstance implements LoxCallable {
     LoxFunction findMethod(String name) {
         if (methods.containsKey(name)) {
             return methods.get(name);
+        }
+
+        // TODO: This would be a good place to wire in native functions for instances
+        if (superclass != null) {
+            return superclass.findMethod(name);
         }
 
         return null;
