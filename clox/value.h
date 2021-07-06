@@ -5,7 +5,7 @@
 
 typedef double Value;
 
-typedef struct ValueArray {
+typedef struct {
   int capacity;
   int count;
   Value* values;
